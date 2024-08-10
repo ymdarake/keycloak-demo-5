@@ -33,10 +33,17 @@ type IntrospectionResponse struct {
 }
 
 func (h Handler) StartAuth(w http.ResponseWriter, r *http.Request) {
+	scope := ""
+	queryScope := r.URL.Query().Get("scope")
+	if queryScope != "" {
+		scope = fmt.Sprintf("&scope=%s", queryScope)
+	}
+
 	authURL := fmt.Sprintf(
-		"%s?response_type=code&client_id=%s&redirect_uri=http%%3A%%2F%%2Flocalhost%%3A8081%%2Fauth%%2Fcallback",
+		"%s?response_type=code&client_id=%s&redirect_uri=http%%3A%%2F%%2Flocalhost%%3A8081%%2Fauth%%2Fcallback%s",
 		h.Config.AUTHORIZATION_ENDPOINT,
 		h.Config.KEYCLOAK_CLIENT_ID,
+		scope,
 	)
 	w.Header().Set("Content-Type", "text/json")
 	http.Redirect(w, r, authURL, http.StatusFound)
