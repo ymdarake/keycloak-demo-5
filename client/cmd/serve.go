@@ -5,6 +5,8 @@ package cmd
 
 import (
 	"fmt"
+	"keycloak-demo-5-client/config"
+	"keycloak-demo-5-client/handler"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -19,15 +21,21 @@ var serveCmd = &cobra.Command{
 	Long:  `start server`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		config := LoadConfig()
+		config := config.LoadConfig()
 		fmt.Printf("%+v", config)
+		h := handler.Handler{Config: config}
 
 		r := chi.NewRouter()
 		r.Use(middleware.Logger)
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("welcome"))
 		})
-		http.ListenAndServe(":8082", r)
+		r.Route("/auth", func(r chi.Router) {
+			r.Get("/start", h.StartAuth)
+			r.Get("/callback", h.Callback)
+		})
+
+		http.ListenAndServe(fmt.Sprintf(":%d", config.PORT), r)
 	},
 }
 

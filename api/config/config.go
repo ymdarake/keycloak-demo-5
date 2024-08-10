@@ -1,4 +1,4 @@
-package cmd
+package config
 
 import (
 	"log"
@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	PORT                        int
 	KEYCLOAK_CLIENT_ID          string
 	KEYCLOAK_CLIENT_SECRET      string
 	AUTH_SERVER_URL             string

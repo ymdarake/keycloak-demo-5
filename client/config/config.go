@@ -1,4 +1,4 @@
-package cmd
+package config
 
 import (
 	"log"
@@ -7,7 +7,10 @@ import (
 )
 
 type Config struct {
-	API_SERVER_URL         string
+	PORT                   int
+	AUTHORIZATION_ENDPOINT string
+	TOKEN_ENDPOINT         string
+	REVOKE_ENDPOINT        string
 	KEYCLOAK_CLIENT_ID     string
 	KEYCLOAK_CLIENT_SECRET string
 }
