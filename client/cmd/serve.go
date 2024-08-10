@@ -33,6 +33,7 @@ var serveCmd = &cobra.Command{
 		r.Route("/auth", func(r chi.Router) {
 			r.Get("/start", h.StartAuth)
 			r.Get("/callback", h.Callback)
+			r.Get("/introspect", h.Introspect)
 		})
 
 		http.ListenAndServe(fmt.Sprintf(":%d", config.PORT), r)
