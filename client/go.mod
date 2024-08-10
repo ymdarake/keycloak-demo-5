@@ -1,4 +1,4 @@
-module keycloak-demo-5
+module keycloak-demo-5-client
 
 go 1.22
 

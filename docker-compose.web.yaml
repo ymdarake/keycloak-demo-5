@@ -1,0 +1,7 @@
+services:
+  web-front:
+    build: 
+      context: ./web-front
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
