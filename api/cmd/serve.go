@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"keycloak-demo-5/config"
 	"keycloak-demo-5/handler"
+	appmiddleware "keycloak-demo-5/middleware"
 
 	"net/http"
 
@@ -35,6 +36,14 @@ var serveCmd = &cobra.Command{
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/introspect", h.Introspect)
 		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(appmiddleware.MustAuthorized)
+			r.Route("/user", func(r chi.Router) {
+				r.Get("/profile", h.Profile)
+			})
+		})
+
 		http.ListenAndServe(fmt.Sprintf(":%d", config.PORT), r)
 	},
 }

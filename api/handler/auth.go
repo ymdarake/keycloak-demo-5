@@ -22,7 +22,27 @@ type IntrospectionResponse struct {
 
 func (h Handler) Introspect(w http.ResponseWriter, r *http.Request) {
 	token := r.PostFormValue("token")
-	endpoint := fmt.Sprintf("%s%s", h.Config.AUTH_SERVER_URL, h.Config.AUTH_INTROSPECTION_ENDPOINT)
+
+	res, err := introspect(h.Config, token)
+	if err != nil {
+		log.Printf("ERROR: introspect: %v", err)
+		return
+	}
+
+	jsonRes, err := json.Marshal(res)
+	if err != nil {
+		log.Printf("ERROR: json.Marshal: %+v\n", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write(jsonRes)
+}
+
+func introspect(conf config.Config, token string) (*IntrospectionResponse, error) {
+	endpoint := fmt.Sprintf("%s%s", conf.AUTH_SERVER_URL, conf.AUTH_INTROSPECTION_ENDPOINT)
 
 	values := url.Values{}
 	values.Set("token", token)
@@ -35,11 +55,10 @@ func (h Handler) Introspect(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("=====ERROR: %+v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return nil, err
 	}
 
-	basicAuth := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", h.Config.KEYCLOAK_CLIENT_ID, h.Config.KEYCLOAK_CLIENT_SECRET))))
+	basicAuth := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.KEYCLOAK_CLIENT_ID, conf.KEYCLOAK_CLIENT_SECRET))))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", basicAuth)
 
@@ -47,8 +66,7 @@ func (h Handler) Introspect(w http.ResponseWriter, r *http.Request) {
 	res, err := client.Do(req)
 	if err != nil {
 		log.Printf("ERROR: %+v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return nil, err
 	}
 	defer res.Body.Close()
 
@@ -56,20 +74,8 @@ func (h Handler) Introspect(w http.ResponseWriter, r *http.Request) {
 	derr := json.NewDecoder(res.Body).Decode(authRes)
 	if derr != nil {
 		log.Printf("ERROR: json.NewDecoder: %+v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return nil, derr
 	}
 
-	jsonRes, err := json.Marshal(authRes)
-	if err != nil {
-		log.Printf("ERROR: json.Marshal: %+v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	fmt.Println(endpoint, authRes.Error)
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write(jsonRes)
+	return authRes, nil
 }

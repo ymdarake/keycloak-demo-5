@@ -10,6 +10,7 @@ type Config struct {
 	PORT                              int
 	API_SERVER_URL                    string
 	API_SERVER_INTROSPECTION_ENDPOINT string
+	API_SERVER_USER_PROFILE_ENDPOINT  string
 	AUTHORIZATION_ENDPOINT            string
 	TOKEN_ENDPOINT                    string
 	REVOKE_ENDPOINT                   string

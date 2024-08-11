@@ -28,12 +28,23 @@ var serveCmd = &cobra.Command{
 		r := chi.NewRouter()
 		r.Use(middleware.Logger)
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("welcome"))
+			w.Write([]byte(`
+<body>
+	<section>
+		<div><a href="/auth/start?scope=profile readdata">権限: profile, readdata<a/></div>
+		<div><a href="/auth/start?scope=readdata">権限: readdata<a/></div>
+		<div><a href="/auth/start?scope=profile">権限: profile<a/></div>
+	</section>
+</body>
+`))
 		})
 		r.Route("/auth", func(r chi.Router) {
 			r.Get("/start", h.StartAuth)
 			r.Get("/callback", h.Callback)
 			r.Get("/introspect", h.Introspect)
+		})
+		r.Route("/user", func(r chi.Router) {
+			r.Get("/profile", h.Profile)
 		})
 
 		http.ListenAndServe(fmt.Sprintf(":%d", config.PORT), r)
