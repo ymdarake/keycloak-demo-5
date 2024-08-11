@@ -31,9 +31,10 @@ var serveCmd = &cobra.Command{
 			w.Write([]byte(`
 <body>
 	<section>
-		<div><a href="/auth/start?scope=profile readdata">権限: profile, readdata<a/></div>
-		<div><a href="/auth/start?scope=readdata">権限: readdata<a/></div>
-		<div><a href="/auth/start?scope=profile">権限: profile<a/></div>
+		<div><a href="/auth/start?scope=openid profile readdata">scope: openid, profile, readdata<a/></div>
+		<div><a href="/auth/start?scope=profile readdata">scope: profile, readdata<a/></div>
+		<div><a href="/auth/start?scope=readdata">scope: readdata<a/></div>
+		<div><a href="/auth/start?scope=profile">scope: profile<a/></div>
 	</section>
 </body>
 `))

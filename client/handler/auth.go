@@ -9,10 +9,13 @@ import (
 	"strings"
 
 	"log"
+
+	"github.com/google/uuid"
 )
 
 // NOTE: DBがわりにメモリで管理する
 var token = ""
+var state = ""
 
 type Handler struct {
 	Config config.Config
@@ -39,11 +42,14 @@ func (h Handler) StartAuth(w http.ResponseWriter, r *http.Request) {
 		scope = fmt.Sprintf("&scope=%s", queryScope)
 	}
 
+	state = uuid.NewString()
+
 	authURL := fmt.Sprintf(
-		"%s?response_type=code&client_id=%s&redirect_uri=http%%3A%%2F%%2Flocalhost%%3A8081%%2Fauth%%2Fcallback%s",
+		"%s?response_type=code&client_id=%s&redirect_uri=http%%3A%%2F%%2Flocalhost%%3A8081%%2Fauth%%2Fcallback%s&state=%s",
 		h.Config.AUTHORIZATION_ENDPOINT,
 		h.Config.KEYCLOAK_CLIENT_ID,
 		scope,
+		state,
 	)
 	w.Header().Set("Content-Type", "text/json")
 	http.Redirect(w, r, authURL, http.StatusFound)
@@ -51,6 +57,21 @@ func (h Handler) StartAuth(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) Callback(w http.ResponseWriter, r *http.Request) {
 	authCode := r.URL.Query().Get("code")
+
+	// NOTE: セキュリティのためにstateがフロー開始時のものと一致するかをチェックする
+	// 攻撃者が別タイミングで取得した認可コードではアクセストークンを取得しにいかない。攻撃者の設定したスコープのアクセストークンを発行させない。
+	// nonceパラメーターを付ける場合はIDトークンの中にnonceが返ってくるのでそれとの一致確認をする。
+	// NOTE: これに加えてPKCEでのクライアントの正当性確認ができる。
+	// Keycloakは仕様実装済みなので、クライアント側でコードを生成して送信すれば良い。アダプタがある。
+	callbackState := r.URL.Query().Get("state")
+	fmt.Printf("STATE:\n\n\t%s\n\t%s\n\n", state, callbackState)
+	if state != callbackState {
+		log.Printf("=====ERROR: wrong state given")
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte(`forbidden: wrong state`))
+		return
+	}
+
 	cliendID := h.Config.KEYCLOAK_CLIENT_ID
 	clientSecret := h.Config.KEYCLOAK_CLIENT_SECRET
 	endpoint := h.Config.TOKEN_ENDPOINT
