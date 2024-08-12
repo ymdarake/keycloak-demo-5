@@ -3,11 +3,9 @@ package authz
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"strings"
 )
 
-type Token struct {
+type TokenPayload struct {
 	Sub       string `json:"sub"`
 	Name      string `json:"name"`
 	Scope     string `json:"scope"`
@@ -16,17 +14,12 @@ type Token struct {
 	Birthdate string `json:"birthdate"`
 }
 
-func TokenFromString(str string) (*Token, error) {
-	// TODO: verify with key
-	parts := strings.Split(str, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("token must be separated into 3 parts by dot")
-	}
-	decoded, err := base64.RawURLEncoding.DecodeString(parts[1])
+func TokenPayloadFromString(str string) (*TokenPayload, error) {
+	decoded, err := base64.RawURLEncoding.DecodeString(str)
 	if err != nil {
 		return nil, err
 	}
-	tok := Token{}
+	tok := TokenPayload{}
 	json.Unmarshal(decoded, &tok)
 	return &tok, nil
 }

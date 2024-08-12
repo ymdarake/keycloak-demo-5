@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"keycloak-demo-5/pkg/authz"
 	"net/http"
-	"strings"
 )
 
 type contextKey struct {
@@ -16,26 +15,23 @@ var authTokenCtxKey = &contextKey{"authToken"}
 
 func MustAuthorized(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authorizationHeaderValue := r.Header.Get("Authorization")
-
-		if authorizationHeaderValue == "" {
+		// NOTE: Envoyで検証、抽出している
+		jwtPayload := r.Header.Get("X-Verified-Jwt-Payload")
+		if jwtPayload == "" {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
-		encodedToken := strings.TrimSpace(strings.TrimPrefix(authorizationHeaderValue, "Bearer "))
-		// TODO: introspect/verify token
-		ctx := context.WithValue(r.Context(), authTokenCtxKey, encodedToken)
+		ctx := context.WithValue(r.Context(), authTokenCtxKey, jwtPayload)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})
 
 }
 
-func GetToken(ctx context.Context) *authz.Token {
+func GetToken(ctx context.Context) *authz.TokenPayload {
 	encodedToken := ctx.Value(authTokenCtxKey).(string)
-
-	tok, err := authz.TokenFromString(encodedToken)
+	tok, err := authz.TokenPayloadFromString(encodedToken)
 	if err != nil {
 		fmt.Printf("token decode error: %v\n\n", err)
 		return nil
